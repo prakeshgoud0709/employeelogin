@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Employee</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h2>Create Employee</h2>
+    <form id="create-employee-form">
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" class="form-control" id="name" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" class="form-control" id="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" id="password" required>
+        </div>
+        <div class="form-group">
+            <label for="role">Role</label>
+            <select class="form-control" id="role" required>
+                <option value="">Select Role</option>
+                <option value="EMPLOYEE">Employee</option>
+                <option value="ADMIN">Admin</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="state">State:</label>
+            <select id="state" name="state" class="form-control" required>
+                <option value="">Select State</option>
+                <!-- State options will be populated here -->
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="districts">District:</label>
+            <select id="districts" name="districts" class="form-control" required>
+                <option value="">Select District</option>
+                <!-- District options will be populated here based on the selected state -->
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Employee</button>
+    </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+$(document).ready(function () {
+    // Fetch states from the server
+    $.ajax({
+        url: '/api/auth/states', // Ensure this endpoint returns a list of states
+        method: 'GET',
+        success: function (states) {
+            states.forEach(state => {
+                $('#state').append(`<option value="${state.statename}">${state.statename}</option>`); // Populate state dropdown
+            });
+        },
+        error: function (error) {
+            console.error('Error fetching states:', error);
+            alert('Failed to load states. Please try again.');
+        }
+    });
+
+    // Fetch districts based on the selected state
+    $('#state').on('change', function () {
+        const selectedState = $(this).val();
+        $('#districts').empty().append('<option value="">Select District</option>'); // Clear current districts
+
+        if (selectedState) {
+            $.ajax({
+                url: `/api/auth/districts?statename=${selectedState}`, // Fetch districts for the selected state
+                method: 'GET',
+                success: function (districts) {
+                    districts.forEach(district => {
+                        $('#districts').append(`<option value="${district}">${district}</option>`); // Populate district dropdown
+                    });
+                },
+                error: function (error) {
+                    console.error('Error fetching districts:', error);
+                    alert('Failed to load districts. Please try again.');
+                }
+            });
+        }
+    });
+
+    // Submit form
+    $('#create-employee-form').submit(function (event) {
+        event.preventDefault(); // Prevent default form submission
+
+        const name = $('#name').val();
+        const email = $('#email').val();
+        const password = $('#password').val();
+        const role = $('#role').val();
+        const state = $('#state').val();
+        const district = $('#districts').val(); // Get selected district
+
+        // Check if all required fields are filled
+        if (!name || !email || !password || !role || !state || !district) {
+            alert('Please fill out all required fields.');
+            return;
+        }
+
+        // Prepare the request payload
+        const payload = {
+            name,
+            email,
+            password,
+            role,
+            state,
+            districts: district // Send the selected district
+        };
+
+        // Make a POST request to create the employee
+        fetch('/api/auth/createemployee', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer your_admin_token' // Replace with actual token logic
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Employee created successfully!'); // Success message
+                window.location.href = '/api/auth/adminwelcome'; // Redirect after success
+            } else {
+                alert(data.message || 'Failed to create employee. Please check the input and try again.'); // Error message
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while creating the employee. Please try again.'); // General error message
+        });
+    });
+});
+</script>
+</body>
+</html>

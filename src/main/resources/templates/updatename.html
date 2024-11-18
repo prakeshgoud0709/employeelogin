@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Employee Name</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h1>Update Employee Name</h1>
+    <form id="updateNameForm">
+        <div class="form-group">
+            <label for="currentName">Current Name:</label>
+            <input type="hidden" id="employeeId" th:value="${employee.id}">
+			<input type="text" class="form-control" id="currentName" th:value="${employee.name}" readonly>
+
+        </div>
+        <div class="form-group">
+            <label for="newName">New Name:</label>
+            <input type="text" class="form-control" id="newName" placeholder="Enter new name" required>
+        </div>
+        <input type="hidden" id="employeeId" value="${employee.id}">
+        <button type="submit" class="btn btn-primary">Update Name</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('updateNameForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent form from submitting traditionally
+
+        const employeeId = document.getElementById('employeeId').value;
+        const newName = document.getElementById('newName').value;
+
+        // Debugging logs for confirmation
+        console.log("Submitting update for Employee ID:", employeeId);
+        console.log("New Name:", newName);
+
+        // Make the POST request to update the employee name
+        fetch(`/api/auth/updatename/${employeeId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name: newName }) // Convert new name to JSON
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('Name updated successfully!');
+                window.location.href = '/api/auth/adminwelcome'; // Redirect after a successful update
+            } else {
+                // Handle non-success responses
+                response.text().then(errorMessage => {
+                    alert('Error updating name: ' + errorMessage);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An unexpected error occurred while updating the name.');
+        });
+    });
+</script>
+</body>
+</html>

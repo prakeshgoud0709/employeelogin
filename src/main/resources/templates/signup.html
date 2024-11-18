@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Signup</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .dropdown-menu {
+            max-height: 200px; /* Adjust as needed */
+            overflow-y: auto; /* Enable scrolling */
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <h2 class="mt-5">Employee Signup</h2>
+    <form id="signup-form" class="mt-4">
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label for="role">Role:</label>
+            <select id="role" name="role" class="form-control" required>
+                <option value="employee">Employee</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="state">State:</label>
+            <select id="state" name="state" class="form-control" required>
+                <option value="">Select State</option>
+                <!-- State options will be populated here -->
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="city">District:</label>
+            <select id="city" name="city" class="form-control" required>
+                <option value="">Select District</option>
+                <!-- District options will be populated here based on the selected state -->
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Sign Up</button>
+    </form>
+</div>
+
+<script>
+$(document).ready(function () {
+    // Fetch states from the server
+    $.ajax({
+        url: '/api/auth/states', // Ensure this endpoint returns a list of states
+        method: 'GET',
+        success: function (states) {
+            states.forEach(state => {
+                $('#state').append(`<option value="${state.statename}">${state.statename}</option>`); // Populate state dropdown
+            });
+        },
+        error: function (error) {
+            console.error('Error fetching states:', error);
+        }
+    });
+
+    // Fetch districts based on the selected state
+    $('#state').on('change', function () {
+        const selectedState = $(this).val();
+        $('#city').empty().append('<option value="">Select District</option>'); // Clear current districts
+
+        if (selectedState) {
+            $.ajax({
+                url: `/api/auth/districts?statename=${selectedState}`, // Fetch districts for the selected state
+                method: 'GET',
+                success: function (districts) {
+                    districts.forEach(district => {
+                        $('#city').append(`<option value="${district}">${district}</option>`); // Populate district dropdown
+                    });
+                },
+                error: function (error) {
+                    console.error('Error fetching districts:', error);
+                }
+            });
+        }
+    });
+
+    // Handle form submission
+    $('#signup-form').on('submit', function (e) {
+        e.preventDefault(); // Prevent default form submission
+
+        const name = $('#name').val().trim();
+        const email = $('#email').val().trim();
+        const password = $('#password').val();
+        const role = $('#role').val();
+        const stateName = $('#state').val();
+        const cityName = $('#city').val();
+
+        // Perform validation before sending the request
+        const nameValid = name.length >= 5;
+        const emailValid = /\S+@\S+\.\S+/.test(email);
+        const passwordValid = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
+
+        if (!nameValid) {
+            alert('Name must be at least 5 characters long.');
+            return;
+        }
+        if (!emailValid) {
+            alert('Please enter a valid email address.');
+            return;
+        }
+        if (!passwordValid) {
+            alert('Password must be at least 8 characters long and include uppercase letters, lowercase letters, numbers, and special characters.');
+            return;
+        }
+        if (!cityName) {
+            alert('Please select a district.');
+            return;
+        }
+
+        // Send signup data to server
+        $.ajax({
+            url: '/api/auth/signup',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ 
+                name, 
+                email, 
+                password, 
+                role: role.toUpperCase(), // Convert role to uppercase
+                statename: stateName, // Send state name
+                districts: [cityName] // Send selected district as an array
+            }),
+            success: function (response) {
+                alert('Signup successful! Please sign in.');
+                window.location.replace('/api/auth/signin'); // Redirect to sign-in page
+            },
+            error: function (error) {
+                console.error('Error during signup:', error);
+                const errorMessage = error.responseJSON ? error.responseJSON.message : error.responseText;
+                alert('Signup failed: ' + errorMessage);
+            }
+        });
+    });
+});
+</script>
+
+</body>
+</html>

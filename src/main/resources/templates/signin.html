@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Sign In</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 300px;
+            margin: 100px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        label {
+            margin: 10px 0;
+            display: block;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .signup-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        #error-message {
+            color: red;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Employee Sign In</h1>
+        <div id="error-message"></div>
+        <form id="signInForm" onsubmit="return handleSignIn(event)">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required aria-label="Email">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required aria-label="Password">
+            <button type="submit">Sign In</button>
+        </form>
+        <div class="signup-link">
+            <p>Don't have an account? <a href="/api/auth/signup">Sign Up</a></p>
+        </div>
+    </div>
+
+  <script>
+function handleSignIn(event) {
+    event.preventDefault(); // Prevent default form submission
+
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) {
+        alert('Both fields are required.'); // Simple alert for validation
+        return false;
+    }
+
+    // Perform the fetch request
+    fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: email,
+            password: password
+        })
+    })
+    .then(response => {
+        // Check if response is not OK
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(errorData.message || 'Sign-in failed. Please check your credentials.');
+            });
+        }
+        return response.json(); // Convert response to JSON
+    })
+    .then(data => {
+        // Show the success message in a popup
+        alert(data.message); // Display the success message
+        // Redirect based on the user role
+        window.location.href = data.redirectUrl; // Use the redirect URL from the response
+    })
+    .catch(error => {
+        alert(error.message); // Display error message in popup
+    });
+
+    return false; // Prevent default form submission
+}
+</script>
+
+
+</body>
+</html>
